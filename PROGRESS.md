@@ -1,6 +1,6 @@
 # FoundDex Development Progress
 
-**Current Phase:** Phase 3 — Core Lost & Found Reporting, Search & Maps  
+**Current Phase:** Phase 4 — AI-Assisted Matching (Google Gemini)  
 **Last Updated:** 2026-11-16
 
 ---
@@ -43,13 +43,21 @@
 - [x] Ran `supabase/migrations/202611160001_initial_schema.sql` in Supabase Dashboard SQL Editor.
 - [x] Tested creating an account and signing in at `http://localhost:3000/login` (approved by owner).
 
-### Phase 3 (In Progress)
-- [ ] Install OpenStreetMap + Leaflet (`leaflet`, `@types/leaflet`) for interactive maps.
-- [ ] Build Zod validation schema for lost & found item reports (`src/lib/items.ts`) with unit tests.
-- [ ] Build "Report Lost / Found Item" page (`/report`) with photo upload to Supabase Storage and interactive map location picker.
-- [ ] Build Search & Browse Listings page (`/items`) with filters (lost/found, category, search query) and interactive map view.
-- [ ] Build Item Detail page (`/items/[id]`) showing item info, photo, approximate map location, and owner status.
-- [ ] Update homepage (`/`) with real FoundDex actions ("Report Lost Item", "Report Found Item", "Browse Listings") and recent items.
+### Phase 3 (Completed)
+- [x] Installed OpenStreetMap + Leaflet (`leaflet`, `@types/leaflet`) for interactive maps.
+- [x] Built Zod validation schema and helpers for lost & found item reports (`src/lib/items.ts`, `src/lib/items.test.ts`).
+- [x] Built "Report Lost / Found Item" page (`/report`, `src/components/ReportItemForm.tsx`) with photo upload to Supabase Storage and interactive map location picker (`src/components/LocationPickerMap.tsx`).
+- [x] Built Search & Browse Listings page (`/items`) with keyword/type/category filters and interactive map view (`src/components/ItemsMap.tsx`).
+- [x] Built Item Detail page (`/items/[id]`) showing item info, photo, approximate map location, and reporter name.
+- [x] Updated homepage (`/`) with primary FoundDex actions and live Recent Reports preview.
+- [x] Verified unit tests (11/11), ESLint (0 errors), production build, and live routes (`/`, `/items`).
+- [x] Owner tested reporting/browsing and approved Phase 3.
+
+### Phase 4 (In Progress)
+- [ ] Configure `GEMINI_API_KEY` in `.env.local` (server-only, never exposed to browser).
+- [ ] Build server-side matching service (`src/lib/matching.ts`) with Zod-validated Gemini JSON output and deterministic fallback scoring.
+- [ ] Create secure server API route (`/api/matches`) that finds potential matches between opposite report types (`lost` <-> `found`).
+- [ ] Add "Find Potential Matches" UI panel on `/items/[id]` so users can review AI-assisted match suggestions.
 
 ### Upcoming Phases (Not Started)
 - [ ] Phase 2: Supabase database schema, authentication, and file storage.

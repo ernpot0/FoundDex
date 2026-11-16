@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { LogIn, LogOut, User } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 async function NavbarAuthActions() {
+  await connection();
   const supabase = await createSupabaseServerClient();
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
 
@@ -54,18 +56,32 @@ export function Navbar() {
               FoundDex
             </span>
             <span className="ml-2 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-              Phase 2 Auth &amp; DB
+              Find. Verify. Return.
             </span>
           </div>
         </Link>
 
-        <Suspense
-          fallback={
-            <div className="h-9 w-24 rounded-lg bg-slate-100 dark:bg-slate-800 animate-pulse" />
-          }
-        >
-          <NavbarAuthActions />
-        </Suspense>
+        <nav className="flex items-center gap-4">
+          <Link
+            href="/items"
+            className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition-colors"
+          >
+            Browse Items
+          </Link>
+          <Link
+            href="/report"
+            className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition-colors"
+          >
+            Report Item
+          </Link>
+          <Suspense
+            fallback={
+              <div className="h-9 w-24 rounded-lg bg-slate-100 dark:bg-slate-800 animate-pulse" />
+            }
+          >
+            <NavbarAuthActions />
+          </Suspense>
+        </nav>
       </div>
     </header>
   );

@@ -1,11 +1,22 @@
-import { CheckCircle2, Compass, ShieldCheck, Sparkles } from "lucide-react";
+import { Suspense } from "react";
+import Link from "next/link";
+import {
+  Compass,
+  MapPin,
+  PlusCircle,
+  Search,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCategoryLabel } from "@/lib/items";
 
 const PILLARS = [
   {
     title: "Find",
     description:
-      "Report lost or found items with clear descriptions and privacy-friendly location details.",
+      "Report lost or found items with clear descriptions, photos, and privacy-friendly map pins.",
     icon: Compass,
   },
   {
@@ -22,18 +33,88 @@ const PILLARS = [
   },
 ];
 
+async function RecentReportsSection() {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) {
+    return null;
+  }
+
+  const { data: items } = await supabase
+    .from("items")
+    .select("id, report_type, title, category, location_name, created_at")
+    .order("created_at", { ascending: false })
+    .limit(6);
+
+  const list = items ?? [];
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-xl font-bold tracking-tight">Recent Reports</h2>
+        <Link
+          href="/items"
+          className="text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:underline"
+        >
+          View all listings →
+        </Link>
+      </div>
+
+      {list.length === 0 ? (
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-sm text-slate-600 dark:text-slate-400">
+          No lost or found reports yet. Click{" "}
+          <Link
+            href="/report"
+            className="font-medium text-emerald-700 dark:text-emerald-400 underline"
+          >
+            Report an Item
+          </Link>{" "}
+          to post the first one!
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {list.map((item) => {
+            const isLost = item.report_type === "lost";
+            return (
+              <Link
+                key={item.id}
+                href={`/items/${item.id}`}
+                className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 hover:border-emerald-500 transition-colors space-y-2.5"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span
+                    className={`text-xs font-bold uppercase px-2.5 py-0.5 rounded-full ${
+                      isLost
+                        ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                        : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                    }`}
+                  >
+                    {item.report_type}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    {getCategoryLabel(item.category)}
+                  </span>
+                </div>
+                <h3 className="font-semibold line-clamp-1">{item.title}</h3>
+                <p className="text-xs text-slate-500 inline-flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                  {item.location_name}
+                </p>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 mx-auto max-w-5xl w-full px-6 py-16 flex flex-col gap-14">
-        <section className="max-w-3xl space-y-5">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-1 text-xs font-medium text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-300">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            Local application initialized and running
-          </div>
-
+      <main className="flex-1 mx-auto max-w-5xl w-full px-6 py-14 flex flex-col gap-14">
+        <section className="max-w-3xl space-y-6">
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 dark:text-white">
             Find. Verify. Return.
           </h1>
@@ -44,7 +125,31 @@ export default function HomePage() {
             verify rightful ownership, and coordinate safe returns.
           </p>
 
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Link
+              href="/report?type=lost"
+              className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-600 transition-colors"
+            >
+              <PlusCircle className="h-4 w-4" />
+              Report Lost Item
+            </Link>
+            <Link
+              href="/report?type=found"
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
+            >
+              <PlusCircle className="h-4 w-4" />
+              Report Found Item
+            </Link>
+            <Link
+              href="/items"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <Search className="h-4 w-4" />
+              Browse &amp; Search Map
+            </Link>
+          </div>
+
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             FoundDex is strictly a community lost-and-found service—not an
             e-commerce marketplace. Users cannot buy or sell products here.
           </p>
@@ -70,30 +175,17 @@ export default function HomePage() {
           })}
         </section>
 
-        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 space-y-3">
-          <h2 className="font-semibold text-base">
-            Phase 1 Milestone Status
-          </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            The core Next.js, TypeScript, Tailwind CSS, Zod validation, and
-            Supabase integration scaffolding are ready. Database, authentication,
-            maps, and AI matching will be connected step-by-step in upcoming
-            phases.
-          </p>
-          <div className="pt-1 text-xs text-slate-500 dark:text-slate-400">
-            Health endpoint:{" "}
-            <a
-              href="/api/health"
-              className="font-mono text-emerald-700 dark:text-emerald-400 underline underline-offset-2"
-            >
-              /api/health
-            </a>
-          </div>
-        </section>
+        <Suspense
+          fallback={
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 h-32 animate-pulse" />
+          }
+        >
+          <RecentReportsSection />
+        </Suspense>
       </main>
 
       <footer className="border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500 dark:text-slate-400">
-        FoundDex (founddex.com) — Fresh Foundation • Phase 1
+        FoundDex (founddex.com) — Find. Verify. Return.
       </footer>
     </div>
   );

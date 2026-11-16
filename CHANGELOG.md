@@ -2,6 +2,15 @@
 
 All notable changes to **FoundDex** are documented in this file.
 
+## [0.3.0] - 2026-11-16 — Phase 3: Lost & Found Reporting, Search & Maps
+
+### Added
+- Zod item report validation, category definitions, and storage URL helper (`src/lib/items.ts`, `src/lib/items.test.ts`).
+- OpenStreetMap + Leaflet interactive map components (`src/components/LocationPickerMap.tsx`, `src/components/ItemsMap.tsx`) with privacy-rounded coordinates.
+- Lost/Found item reporting flow (`/report`, `src/components/ReportItemForm.tsx`) with Supabase Storage photo upload.
+- Search & Browse Listings page (`/items`) with keyword, report-type, and category filters plus map view.
+- Item Detail page (`/items/[id]`) and updated FoundDex homepage (`src/app/page.tsx`) with recent reports.
+
 ## [0.2.0] - 2026-11-16 — Phase 2: Database Schema, Auth & Storage
 
 ### Added

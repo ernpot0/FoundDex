@@ -1,10 +1,12 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Award, Mail, ShieldCheck, UserCheck } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 async function AccountContent() {
+  await connection();
   const supabase = await createSupabaseServerClient();
   if (!supabase) {
     redirect("/login");
