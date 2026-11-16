@@ -1,4 +1,5 @@
 import { CheckCircle2, Compass, ShieldCheck, Sparkles } from "lucide-react";
+import { Navbar } from "@/components/Navbar";
 
 const PILLARS = [
   {
@@ -24,26 +25,7 @@ const PILLARS = [
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col">
-      <header className="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur">
-        <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
-              F
-            </div>
-            <div>
-              <span className="font-semibold text-lg tracking-tight">
-                FoundDex
-              </span>
-              <span className="ml-2 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                Phase 1 Foundation
-              </span>
-            </div>
-          </div>
-          <span className="text-sm text-slate-500 dark:text-slate-400">
-            Find. Verify. Return.
-          </span>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="flex-1 mx-auto max-w-5xl w-full px-6 py-16 flex flex-col gap-14">
         <section className="max-w-3xl space-y-5">

@@ -27,15 +27,24 @@ export interface IntegrationStatus {
 
 /**
  * Reads and validates public environment variables with safe defaults.
- * Never throws when optional Phase 2+ credentials are not yet configured.
+ * References `process.env.NEXT_PUBLIC_*` directly so Next.js inlines them
+ * into browser bundles.
  */
-export function getPublicEnv(
-  source: Record<string, string | undefined> = process.env
-) {
+export function getPublicEnv(source?: Record<string, string | undefined>) {
+  const rawAppUrl = source
+    ? source.NEXT_PUBLIC_APP_URL
+    : process.env.NEXT_PUBLIC_APP_URL;
+  const rawSupabaseUrl = source
+    ? source.NEXT_PUBLIC_SUPABASE_URL
+    : process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const rawSupabaseAnonKey = source
+    ? source.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
   const parsed = publicEnvSchema.safeParse({
-    NEXT_PUBLIC_APP_URL: source.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-    NEXT_PUBLIC_SUPABASE_URL: source.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: source.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_APP_URL: rawAppUrl || "http://localhost:3000",
+    NEXT_PUBLIC_SUPABASE_URL: rawSupabaseUrl,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: rawSupabaseAnonKey,
   });
 
   if (!parsed.success) {
@@ -50,25 +59,35 @@ export function getPublicEnv(
 }
 
 /**
+ * Safe to call in both browser and server components.
+ */
+export function isSupabaseConfigured(
+  source?: Record<string, string | undefined>
+): boolean {
+  const env = getPublicEnv(source);
+  return (
+    !isPlaceholder(env.NEXT_PUBLIC_SUPABASE_URL) &&
+    !isPlaceholder(env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  );
+}
+
+/**
  * Reads and validates server-only + public environment variables.
  * Must only be called on the server.
  */
 export function getServerEnv(
   source: Record<string, string | undefined> = process.env
 ) {
+  const pub = getPublicEnv(source);
   const parsed = serverEnvSchema.safeParse({
-    NEXT_PUBLIC_APP_URL: source.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-    NEXT_PUBLIC_SUPABASE_URL: source.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: source.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    ...pub,
     SUPABASE_SERVICE_ROLE_KEY: source.SUPABASE_SERVICE_ROLE_KEY,
     GEMINI_API_KEY: source.GEMINI_API_KEY,
   });
 
   if (!parsed.success) {
     return {
-      NEXT_PUBLIC_APP_URL: "http://localhost:3000",
-      NEXT_PUBLIC_SUPABASE_URL: undefined,
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: undefined,
+      ...pub,
       SUPABASE_SERVICE_ROLE_KEY: undefined,
       GEMINI_API_KEY: undefined,
     };
@@ -79,15 +98,13 @@ export function getServerEnv(
 
 /**
  * Returns boolean integration readiness without exposing any secrets.
+ * Server-only (checks GEMINI_API_KEY).
  */
 export function getIntegrationStatus(
   source: Record<string, string | undefined> = process.env
 ): IntegrationStatus {
   const env = getServerEnv(source);
-  const supabaseConfigured =
-    !isPlaceholder(env.NEXT_PUBLIC_SUPABASE_URL) &&
-    !isPlaceholder(env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-
+  const supabaseConfigured = isSupabaseConfigured(source);
   const geminiConfigured = !isPlaceholder(env.GEMINI_API_KEY);
 
   return {
@@ -96,4 +113,3 @@ export function getIntegrationStatus(
     appUrl: env.NEXT_PUBLIC_APP_URL,
   };
 }
-

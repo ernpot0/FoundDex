@@ -2,6 +2,15 @@
 
 All notable changes to **FoundDex** are documented in this file.
 
+## [0.2.0] - 2026-11-16 — Phase 2: Database Schema, Auth & Storage
+
+### Added
+- Initial PostgreSQL schema migration (`supabase/migrations/202611160001_initial_schema.sql`) with `profiles`, `items`, and `claims` tables, Row-Level Security (RLS) policies, automatic `handle_new_user()` profile trigger, and `item-photos` Storage bucket (5 MB max, JPEG/PNG/WebP).
+- Strongly typed Supabase `Database` definitions (`src/lib/supabase/types.ts`).
+- Next.js 16 session refresh proxy (`src/proxy.ts` and `src/lib/supabase/proxy.ts`).
+- Storage photo validation and user-scoped path helpers (`src/lib/storage.ts`, `src/lib/storage.test.ts`).
+- Authentication pages and routes: `/login`, `/account`, `/auth/callback`, `/auth/signout`, and shared `Navbar` (`src/components/Navbar.tsx`).
+
 ## [0.1.0] - 2026-11-16 — Phase 1: Fresh Project Initialization
 
 ### Added

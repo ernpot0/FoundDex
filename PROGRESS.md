@@ -1,6 +1,6 @@
 # FoundDex Development Progress
 
-**Current Phase:** Phase 1 — Fresh Project Initialization & Local Foundation  
+**Current Phase:** Phase 3 — Core Lost & Found Reporting, Search & Maps  
 **Last Updated:** 2026-11-16
 
 ---
@@ -27,13 +27,29 @@
 - [x] Ran unit tests (`3 passed`), ESLint (`0 errors`), Next.js production build, and live local server verification (`http://localhost:3000` and `/api/health` both returning HTTP 200).
 - [x] Initialized Git repository (`main` branch) and staged all Phase 1 files.
 - [x] Configured Git identity (`Faizan <faiziwebs@gmail.com>`) and created the initial Phase 1 commit.
+- [x] Owner reviewed and approved Phase 1 milestone.
 
 ---
 
 ## Pending Tasks
 
-### Phase 1 Remaining
-- [ ] Owner review and approval of Phase 1 milestone.
+### Phase 2 (Completed)
+- [x] Connected real Supabase project credentials in `.env.local` and verified `/api/health` reports `"supabase": "configured"`.
+- [x] Designed PostgreSQL schema (`profiles`, `items`, `claims`), automatic signup profile trigger, Row-Level Security (RLS) policies, and `item-photos` Storage bucket in `supabase/migrations/202611160001_initial_schema.sql`.
+- [x] Updated TypeScript database types (`src/lib/supabase/types.ts`) and added Next.js 16 session refresh proxy (`src/proxy.ts`).
+- [x] Added Zod-validated photo upload helpers and unit tests (`src/lib/storage.ts`, `src/lib/storage.test.ts`).
+- [x] Implemented Authentication UI and routes (`/login`, `/account`, `/auth/callback`, `/auth/signout`, `src/components/Navbar.tsx`).
+- [x] Verified unit tests (7/7), ESLint (0 errors), production build, and local `/` and `/login` routes (HTTP 200).
+- [x] Ran `supabase/migrations/202611160001_initial_schema.sql` in Supabase Dashboard SQL Editor.
+- [x] Tested creating an account and signing in at `http://localhost:3000/login` (approved by owner).
+
+### Phase 3 (In Progress)
+- [ ] Install OpenStreetMap + Leaflet (`leaflet`, `@types/leaflet`) for interactive maps.
+- [ ] Build Zod validation schema for lost & found item reports (`src/lib/items.ts`) with unit tests.
+- [ ] Build "Report Lost / Found Item" page (`/report`) with photo upload to Supabase Storage and interactive map location picker.
+- [ ] Build Search & Browse Listings page (`/items`) with filters (lost/found, category, search query) and interactive map view.
+- [ ] Build Item Detail page (`/items/[id]`) showing item info, photo, approximate map location, and owner status.
+- [ ] Update homepage (`/`) with real FoundDex actions ("Report Lost Item", "Report Found Item", "Browse Listings") and recent items.
 
 ### Upcoming Phases (Not Started)
 - [ ] Phase 2: Supabase database schema, authentication, and file storage.
