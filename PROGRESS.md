@@ -80,10 +80,11 @@
 - [x] Verified unit tests (22/22), ESLint (0 errors), and Next.js production build.
 - [x] Owner tested and approved Phase 6.
 
-### Phase 7 (In Progress)
-- [ ] Install Playwright (`@playwright/test`) and create end-to-end tests covering homepage, browse/search, login, health endpoint, and protected route redirects.
-- [ ] Configure `next.config.ts` (`output: "standalone"`) and create production `Dockerfile` + `.dockerignore` for Google Cloud Run.
-- [ ] Create `DEPLOYMENT.md` with step-by-step Google Cloud Run deployment & custom domain (`founddex.com`) instructions.
+### Phase 7 (Completed)
+- [x] Installed Playwright (`@playwright/test` + Chromium) and created end-to-end tests (`playwright.config.ts`, `tests/e2e/smoke.spec.ts`) — **5/5 passed**.
+- [x] Configured `next.config.ts` (`output: "standalone"`) and created production `Dockerfile` + `.dockerignore` for Google Cloud Run.
+- [x] Created `DEPLOYMENT.md` with step-by-step Google Cloud Run deployment & custom domain (`founddex.com`) instructions.
+- [x] Verified full suite: unit tests (22/22), ESLint (0 errors), Next.js standalone build, and Playwright E2E (5/5).
 
 ### Upcoming Phases (Not Started)
 - [ ] Phase 2: Supabase database schema, authentication, and file storage.

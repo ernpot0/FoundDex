@@ -2,6 +2,13 @@
 
 All notable changes to **FoundDex** are documented in this file.
 
+## [0.7.0] - 2026-11-17 — Phase 7: Playwright E2E Tests & Google Cloud Run Readiness
+
+### Added
+- Playwright end-to-end test suite (`playwright.config.ts`, `tests/e2e/smoke.spec.ts`, `npm run test:e2e`).
+- Production containerization for Google Cloud Run (`Dockerfile`, `.dockerignore`, `output: "standalone"` in `next.config.ts`).
+- Step-by-step Cloud Run & `founddex.com` deployment guide (`DEPLOYMENT.md`).
+
 ## [0.6.0] - 2026-11-17 — Phase 6: Recognition, Finder Certificates & Admin Moderation
 
 ### Added
