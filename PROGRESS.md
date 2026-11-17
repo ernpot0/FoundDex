@@ -1,7 +1,7 @@
 # FoundDex Development Progress
 
-**Current Phase:** Phase 4 — AI-Assisted Matching (Google Gemini)  
-**Last Updated:** 2026-11-16
+**Current Phase:** Phase 5 — Ownership Verification, Safe Return & Messaging  
+**Last Updated:** 2026-11-17
 
 ---
 
@@ -53,11 +53,20 @@
 - [x] Verified unit tests (11/11), ESLint (0 errors), production build, and live routes (`/`, `/items`).
 - [x] Owner tested reporting/browsing and approved Phase 3.
 
-### Phase 4 (In Progress)
-- [ ] Configure `GEMINI_API_KEY` in `.env.local` (server-only, never exposed to browser).
-- [ ] Build server-side matching service (`src/lib/matching.ts`) with Zod-validated Gemini JSON output and deterministic fallback scoring.
-- [ ] Create secure server API route (`/api/matches`) that finds potential matches between opposite report types (`lost` <-> `found`).
-- [ ] Add "Find Potential Matches" UI panel on `/items/[id]` so users can review AI-assisted match suggestions.
+### Phase 4 (Completed)
+- [x] Built server-side matching service (`src/lib/matching.ts`, `src/lib/matching.test.ts`) with Zod-validated Gemini JSON output and deterministic fallback scoring.
+- [x] Created secure server API route (`/api/matches`) that finds potential matches between opposite report types (`lost` <-> `found`).
+- [x] Added "Find Potential Matches" UI panel (`src/components/MatchSuggestionsPanel.tsx`) on `/items/[id]`.
+- [x] Resolved Next.js 16 `connection()` prerender warnings on `/`, `/items`, and `/items/[id]`.
+- [x] Verified unit tests (13/13), ESLint (0 errors), and Next.js production build.
+- [x] Owner tested match suggestions (72% match) and approved Phase 4.
+
+### Phase 5 (In Progress)
+- [ ] Add `messages` table with Row-Level Security (RLS) in a new Supabase migration (`supabase/migrations/202611170001_phase5_messages.sql`) for safe claim-scoped messaging.
+- [ ] Update TypeScript `Database` types (`src/lib/supabase/types.ts`) for `messages`.
+- [ ] Build Zod validation & helpers for ownership claims and safe return messages (`src/lib/claims.ts`, `src/lib/claims.test.ts`).
+- [ ] Build Ownership Verification & Claim Panel (`src/components/ClaimPanel.tsx`) on `/items/[id]` where users can submit verification proof and item owners can approve/reject claims or mark items as returned.
+- [ ] Build Safe In-App Messaging Panel (`src/components/ClaimMessages.tsx`) unlocked once a claim is submitted/approved, without exposing personal phone numbers or emails.
 
 ### Upcoming Phases (Not Started)
 - [ ] Phase 2: Supabase database schema, authentication, and file storage.

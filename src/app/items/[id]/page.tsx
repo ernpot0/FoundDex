@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import {
   ArrowLeft,
   Calendar,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { ItemsMap } from "@/components/ItemsMap";
+import { MatchSuggestionsPanel } from "@/components/MatchSuggestionsPanel";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCategoryLabel, getItemPhotoUrl } from "@/lib/items";
 
@@ -23,6 +25,7 @@ async function ItemDetailContent({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
   if (!supabase) {
@@ -129,6 +132,8 @@ async function ItemDetailContent({
               <ItemsMap items={[item]} heightClassName="h-64" />
             </div>
           )}
+
+          <MatchSuggestionsPanel itemId={item.id} reportType={item.report_type} />
 
           <div className="rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-950/40 p-4 flex items-start gap-3">
             <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />

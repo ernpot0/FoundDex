@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { connection } from "next/server";
 import { Calendar, MapPin, PlusCircle, Search, Tag } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { ItemsMap } from "@/components/ItemsMap";
@@ -19,6 +20,7 @@ interface ItemsPageProps {
 }
 
 async function ItemsResults({ searchParams }: ItemsPageProps) {
+  await connection();
   const params = await searchParams;
   const q = params.q?.trim() ?? "";
   const type =

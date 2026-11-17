@@ -2,6 +2,13 @@
 
 All notable changes to **FoundDex** are documented in this file.
 
+## [0.4.0] - 2026-11-16 — Phase 4: AI-Assisted Matching (Google Gemini)
+
+### Added
+- Server-side matching service (`src/lib/matching.ts`, `src/lib/matching.test.ts`) supporting Google Gemini (`gemini-2.5-flash`) with Zod-validated JSON output and deterministic keyword/location/proximity fallback.
+- Secure server-only matching endpoint (`POST /api/matches` in `src/app/api/matches/route.ts`).
+- Interactive `MatchSuggestionsPanel` (`src/components/MatchSuggestionsPanel.tsx`) integrated into `/items/[id]`.
+
 ## [0.3.0] - 2026-11-16 — Phase 3: Lost & Found Reporting, Search & Maps
 
 ### Added

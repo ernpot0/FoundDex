@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { connection } from "next/server";
 import {
   Compass,
   MapPin,
@@ -34,6 +35,7 @@ const PILLARS = [
 ];
 
 async function RecentReportsSection() {
+  await connection();
   const supabase = await createSupabaseServerClient();
   if (!supabase) {
     return null;
