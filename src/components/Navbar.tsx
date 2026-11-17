@@ -3,43 +3,73 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { LogIn, LogOut, User } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { LiveMessagesNavLink } from "./LiveMessagesNavLink";
 
-async function NavbarAuthActions() {
+async function NavbarRightSection() {
   await connection();
   const supabase = await createSupabaseServerClient();
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
 
-  if (!user) {
-    return (
-      <Link
-        href="/login"
-        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
-      >
-        <LogIn className="h-4 w-4" />
-        Sign In
-      </Link>
-    );
+  let unreadCount = 0;
+  if (supabase && user) {
+    const { data: convs } = await supabase
+      .from("conversations")
+      .select("id, participant_a, participant_b, deleted_by_a_at, deleted_by_b_at")
+      .or(`participant_a.eq.${user.id},participant_b.eq.${user.id}`);
+    const convIds = (convs ?? [])
+      .filter(
+        (c) =>
+          !(c.participant_a === user.id && c.deleted_by_a_at) &&
+          !(c.participant_b === user.id && c.deleted_by_b_at)
+      )
+      .map((c) => c.id);
+    if (convIds.length > 0) {
+      const { count } = await supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .in("conversation_id", convIds)
+        .neq("sender_id", user.id)
+        .is("read_at", null);
+      unreadCount = count ?? 0;
+    }
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <Link
-        href="/account"
-        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-      >
-        <User className="h-4 w-4 text-emerald-600" />
-        Account
-      </Link>
-      <form action="/auth/signout" method="post">
-        <button
-          type="submit"
-          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+    <>
+      <LiveMessagesNavLink
+        userId={user?.id ?? null}
+        initialUnreadCount={unreadCount}
+      />
+
+      {!user ? (
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
         >
-          <LogOut className="h-4 w-4" />
-          Sign Out
-        </button>
-      </form>
-    </div>
+          <LogIn className="h-4 w-4" />
+          Sign In
+        </Link>
+      ) : (
+        <div className="flex items-center gap-3">
+          <Link
+            href="/account"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <User className="h-4 w-4 text-emerald-600" />
+            Account
+          </Link>
+          <form action="/auth/signout" method="post">
+            <button
+              type="submit"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </button>
+          </form>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -80,22 +110,15 @@ export function Navbar() {
           >
             Recovery Center
           </Link>
-          <Link
-            href="/messages"
-            className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition-colors"
-          >
-            Messages
-          </Link>
           <Suspense
             fallback={
               <div className="h-9 w-24 rounded-lg bg-slate-100 dark:bg-slate-800 animate-pulse" />
             }
           >
-            <NavbarAuthActions />
+            <NavbarRightSection />
           </Suspense>
         </nav>
       </div>
     </header>
   );
 }
-

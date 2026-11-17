@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { ArrowLeft, Calendar, MapPin, Tag, User } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { ItemsMap } from "@/components/ItemsMap";
+import { LiveItemSync } from "@/components/LiveItemSync";
 import { MatchSuggestionsPanel } from "@/components/MatchSuggestionsPanel";
 import {
   FoundItemClaimSection,
@@ -127,6 +128,7 @@ async function ItemDetailContent({
 
   return (
     <div className="space-y-6">
+      <LiveItemSync itemId={item.id} />
       <Link
         href="/items"
         className="inline-flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600 transition-colors"
@@ -224,6 +226,7 @@ async function ItemDetailContent({
             <LostItemActionSection
               itemId={item.id}
               itemTitle={item.title}
+              itemStatus={item.status}
               ownerId={item.user_id}
               currentUserId={user?.id ?? null}
               foundResponses={foundResponses}

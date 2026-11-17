@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -17,6 +17,7 @@ import {
   getClaimStatusBadge,
   getRecoveryCaseStatusLabel,
 } from "@/lib/claims";
+import { getRecognitionTier } from "@/lib/recognition";
 import type { ClaimStatus, RecoveryCaseStatus } from "@/lib/supabase/types";
 
 export interface SimpleItemSummary {
@@ -62,8 +63,18 @@ export interface RecoveryCaseRow {
   created_at: string;
 }
 
+export interface FinderCertificateSummary {
+  id: string;
+  certificate_code: string;
+  item_title: string;
+  points_awarded: number;
+  issued_at: string;
+}
+
 interface RecoveryCenterClientProps {
   currentUserId: string;
+  trustPoints: number;
+  certificates: FinderCertificateSummary[];
   myLostReports: SimpleItemSummary[];
   myFoundReports: SimpleItemSummary[];
   claimsReceived: RecoveryClaimRow[];
@@ -86,13 +97,14 @@ type TabId =
 
 export function RecoveryCenterClient({
   currentUserId,
+  trustPoints,
+  certificates,
   myLostReports,
   myFoundReports,
   claimsReceived,
   claimsSubmitted,
   myFoundResponses,
   recoveryCases,
-  conversationCount,
   unreadMessagesCount,
 }: RecoveryCenterClientProps) {
   const router = useRouter();
@@ -102,6 +114,39 @@ export function RecoveryCenterClient({
 
   const activeCases = recoveryCases.filter((c) => c.status !== "completed");
   const completedCases = recoveryCases.filter((c) => c.status === "completed");
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+
+    const channel = supabase
+      .channel(`recovery-live:${currentUserId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "recovery_cases" },
+        () => router.refresh()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "return_confirmations" },
+        () => router.refresh()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "claims" },
+        () => router.refresh()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "found_responses" },
+        () => router.refresh()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId, router]);
 
   async function handleMarkReturnArranged(rc: RecoveryCaseRow) {
     setError(null);
@@ -165,12 +210,17 @@ export function RecoveryCenterClient({
           ? "awaiting_owner_confirmation"
           : "return_arranged";
 
-      await supabase
+      const { error: caseErr } = await supabase
         .from("recovery_cases")
         .update({ status: nextCaseStatus })
         .eq("id", rc.id);
 
-      if (bothConfirmed) {
+      if (caseErr) {
+        setError(caseErr.message);
+        return;
+      }
+
+      if (bothConfirmed && rc.owner_id === currentUserId) {
         await supabase
           .from("items")
           .update({ status: "returned" })
@@ -288,7 +338,7 @@ export function RecoveryCenterClient({
           className="inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800"
         >
           <MessageSquare className="h-4 w-4 text-emerald-600" />
-          Messages ({conversationCount})
+          Messages
           {unreadMessagesCount > 0 && (
             <span className="rounded-full bg-emerald-600 text-white text-xs px-2 py-0.5">
               {unreadMessagesCount} new
@@ -553,22 +603,60 @@ export function RecoveryCenterClient({
         </div>
       )}
 
-      {/* Rewards & Certificates (gated on dual confirmation, expanded in Phase 6) */}
+      {/* Rewards & Certificates (strictly unlocked after dual confirmation) */}
       {activeTab === "rewards" && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 space-y-3">
-          <div className="inline-flex items-center gap-2 font-semibold text-base">
-            <Award className="h-5 w-5 text-emerald-600" />
-            Rewards &amp; Finder Certificates
+        <div className="space-y-4">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 space-y-3">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="inline-flex items-center gap-2 font-semibold text-base">
+                <Award className="h-5 w-5 text-emerald-600" />
+                Rewards &amp; Finder Certificates
+              </div>
+              <span
+                className={`text-xs font-bold px-3 py-1 rounded-full ${
+                  getRecognitionTier(trustPoints).badgeClassName
+                }`}
+              >
+                {getRecognitionTier(trustPoints).name} • {trustPoints} pts
+              </span>
+            </div>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              {getRecognitionTier(trustPoints).description} Rewards and
+              certificates are strictly issued only after both finder and owner
+              confirm a return.
+            </p>
           </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Completed recoveries verified by both finder and owner:{" "}
-            <strong>{completedCases.length}</strong>
-          </p>
-          <p className="text-xs text-slate-500">
-            Reputation points, recognition badges, and downloadable Finder
-            Certificates are strictly unlocked only after dual return
-            confirmation and will be expanded in Phase 6.
-          </p>
+
+          {certificates.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center text-sm text-slate-500">
+              No Finder Certificates earned yet. Complete a dual-confirmed
+              return as a finder to earn your first certificate!
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {certificates.map((cert) => (
+                <Link
+                  key={cert.id}
+                  href={`/certificates/${cert.id}`}
+                  className="rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/30 p-5 hover:border-emerald-500 transition-colors space-y-2"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                      {cert.certificate_code}
+                    </span>
+                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                      +{cert.points_awarded} pts
+                    </span>
+                  </div>
+                  <p className="font-semibold text-sm">{cert.item_title}</p>
+                  <p className="text-xs text-slate-500">
+                    Issued {new Date(cert.issued_at).toLocaleDateString()} •
+                    Click to view &amp; print
+                  </p>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

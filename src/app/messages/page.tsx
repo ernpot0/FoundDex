@@ -28,12 +28,16 @@ async function MessagesContent({ searchParams }: MessagesPageProps) {
   const { data: convRows } = await supabase
     .from("conversations")
     .select(
-      "id, item_id, recovery_case_id, participant_a, participant_b, last_message_at"
+      "id, item_id, recovery_case_id, participant_a, participant_b, deleted_by_a_at, deleted_by_b_at, last_message_at"
     )
     .or(`participant_a.eq.${user.id},participant_b.eq.${user.id}`)
     .order("last_message_at", { ascending: false });
 
-  const convs = convRows ?? [];
+  const convs = (convRows ?? []).filter(
+    (c) =>
+      !(c.participant_a === user.id && c.deleted_by_a_at) &&
+      !(c.participant_b === user.id && c.deleted_by_b_at)
+  );
   const itemIds = Array.from(new Set(convs.map((c) => c.item_id)));
   const otherIds = Array.from(
     new Set(
@@ -97,10 +101,72 @@ async function MessagesContent({ searchParams }: MessagesPageProps) {
     }
   }
 
+  // Fetch any associated Claim or Found Response form details for these items
+  const claimsByItemAndUser = new Map<
+    string,
+    {
+      status: string;
+      explanation: string;
+      identifying_features: string;
+      hidden_marks: string | null;
+      private_notes: string | null;
+    }
+  >();
+  const responsesByItemAndUser = new Map<
+    string,
+    {
+      status: string;
+      description: string;
+      location_name: string;
+    }
+  >();
+
+  if (itemIds.length > 0) {
+    const [{ data: claimsRows }, { data: respRows }] = await Promise.all([
+      supabase
+        .from("claims")
+        .select(
+          "item_id, claimant_id, status, explanation, identifying_features, hidden_marks, private_notes"
+        )
+        .in("item_id", itemIds),
+      supabase
+        .from("found_responses")
+        .select("item_id, finder_id, status, description, location_name")
+        .in("item_id", itemIds),
+    ]);
+
+    for (const cl of claimsRows ?? []) {
+      claimsByItemAndUser.set(`${cl.item_id}:${cl.claimant_id}`, {
+        status: cl.status,
+        explanation: cl.explanation,
+        identifying_features: cl.identifying_features,
+        hidden_marks: cl.hidden_marks,
+        private_notes: cl.private_notes,
+      });
+    }
+    for (const fr of respRows ?? []) {
+      responsesByItemAndUser.set(`${fr.item_id}:${fr.finder_id}`, {
+        status: fr.status,
+        description: fr.description,
+        location_name: fr.location_name,
+      });
+    }
+  }
+
   const initialConversations: ConversationItem[] = convs.map((c) => {
     const otherId =
       c.participant_a === user.id ? c.participant_b : c.participant_a;
     const item = itemMap.get(c.item_id);
+
+    const claimMatch =
+      claimsByItemAndUser.get(`${c.item_id}:${otherId}`) ??
+      claimsByItemAndUser.get(`${c.item_id}:${user.id}`) ??
+      null;
+    const responseMatch =
+      responsesByItemAndUser.get(`${c.item_id}:${otherId}`) ??
+      responsesByItemAndUser.get(`${c.item_id}:${user.id}`) ??
+      null;
+
     return {
       id: c.id,
       item_id: c.item_id,
@@ -111,8 +177,14 @@ async function MessagesContent({ searchParams }: MessagesPageProps) {
       recovery_case_id: c.recovery_case_id,
       other_user_id: otherId,
       other_user_name: profileMap.get(otherId) ?? "FoundDex Member",
+      is_participant_a: c.participant_a === user.id,
       last_message_at: c.last_message_at,
       unread_count: unreadMap.get(c.id) ?? 0,
+      form_details: claimMatch
+        ? { kind: "claim", ...claimMatch }
+        : responseMatch
+          ? { kind: "found_response", ...responseMatch }
+          : null,
     };
   });
 

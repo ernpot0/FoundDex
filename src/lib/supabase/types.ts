@@ -58,6 +58,7 @@ export interface Database {
           full_name: string | null;
           avatar_url: string | null;
           trust_points: number;
+          is_admin: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -66,6 +67,7 @@ export interface Database {
           full_name?: string | null;
           avatar_url?: string | null;
           trust_points?: number;
+          is_admin?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -74,6 +76,7 @@ export interface Database {
           full_name?: string | null;
           avatar_url?: string | null;
           trust_points?: number;
+          is_admin?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -286,6 +289,8 @@ export interface Database {
           recovery_case_id: string | null;
           participant_a: string;
           participant_b: string;
+          deleted_by_a_at: string | null;
+          deleted_by_b_at: string | null;
           last_message_at: string;
           created_at: string;
         };
@@ -295,6 +300,8 @@ export interface Database {
           recovery_case_id?: string | null;
           participant_a: string;
           participant_b: string;
+          deleted_by_a_at?: string | null;
+          deleted_by_b_at?: string | null;
           last_message_at?: string;
           created_at?: string;
         };
@@ -304,6 +311,8 @@ export interface Database {
           recovery_case_id?: string | null;
           participant_a?: string;
           participant_b?: string;
+          deleted_by_a_at?: string | null;
+          deleted_by_b_at?: string | null;
           last_message_at?: string;
           created_at?: string;
         };
@@ -476,6 +485,69 @@ export interface Database {
           actor_id?: string;
           action?: string;
           metadata?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      finder_certificates: {
+        Row: {
+          id: string;
+          recovery_case_id: string;
+          finder_id: string;
+          owner_id: string;
+          item_id: string;
+          certificate_code: string;
+          points_awarded: number;
+          issued_at: string;
+        };
+        Insert: {
+          id?: string;
+          recovery_case_id: string;
+          finder_id: string;
+          owner_id: string;
+          item_id: string;
+          certificate_code: string;
+          points_awarded?: number;
+          issued_at?: string;
+        };
+        Update: {
+          id?: string;
+          recovery_case_id?: string;
+          finder_id?: string;
+          owner_id?: string;
+          item_id?: string;
+          certificate_code?: string;
+          points_awarded?: number;
+          issued_at?: string;
+        };
+        Relationships: [];
+      };
+      moderation_audit_logs: {
+        Row: {
+          id: string;
+          admin_id: string;
+          target_type: string;
+          target_id: string;
+          action: string;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          admin_id: string;
+          target_type: string;
+          target_id: string;
+          action: string;
+          note?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          admin_id?: string;
+          target_type?: string;
+          target_id?: string;
+          action?: string;
+          note?: string | null;
           created_at?: string;
         };
         Relationships: [];

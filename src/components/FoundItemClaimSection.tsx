@@ -319,7 +319,10 @@ export function FoundItemClaimSection({
           <span>{formatPublicClaimCount(publicClaimCount)}</span>
         </div>
 
-        {!isFinder && !myClaim && itemStatus !== "returned" && (
+        {!isFinder &&
+          !myClaim &&
+          itemStatus !== "returned" &&
+          itemStatus !== "closed" && (
           currentUserId ? (
             <button
               type="button"

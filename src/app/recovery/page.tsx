@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Navbar } from "@/components/Navbar";
 import {
   RecoveryCenterClient,
+  type FinderCertificateSummary,
   type RecoveryCaseRow,
   type RecoveryClaimRow,
   type RecoveryFoundResponseRow,
@@ -20,6 +21,18 @@ async function RecoveryCenterContent() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  const { data: myProfile } = await supabase
+    .from("profiles")
+    .select("trust_points")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const { data: certsData } = await supabase
+    .from("finder_certificates")
+    .select("id, certificate_code, item_id, points_awarded, issued_at")
+    .eq("finder_id", user.id)
+    .order("issued_at", { ascending: false });
 
   const { data: myItems } = await supabase
     .from("items")
@@ -86,6 +99,7 @@ async function RecoveryCenterContent() {
       ...(submittedClaimsData ?? []).map((c) => c.item_id),
       ...(myResponsesData ?? []).map((r) => r.item_id),
       ...(casesData ?? []).map((c) => c.item_id),
+      ...(certsData ?? []).map((cert) => cert.item_id),
     ])
   );
   const itemTitleMap = new Map<string, string>(
@@ -186,9 +200,21 @@ async function RecoveryCenterContent() {
     };
   });
 
+  const certificates: FinderCertificateSummary[] = (certsData ?? []).map(
+    (cert) => ({
+      id: cert.id,
+      certificate_code: cert.certificate_code,
+      item_title: itemTitleMap.get(cert.item_id) ?? "Verified Return",
+      points_awarded: cert.points_awarded,
+      issued_at: cert.issued_at,
+    })
+  );
+
   return (
     <RecoveryCenterClient
       currentUserId={user.id}
+      trustPoints={myProfile?.trust_points ?? 0}
+      certificates={certificates}
       myLostReports={myLostReports}
       myFoundReports={myFoundReports}
       claimsReceived={claimsReceived}

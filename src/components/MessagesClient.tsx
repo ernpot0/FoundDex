@@ -2,9 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Check,
   CheckCheck,
+  ChevronDown,
+  ChevronUp,
   ExternalLink,
   Eye,
   EyeOff,
@@ -13,10 +16,12 @@ import {
   ImagePlus,
   Loader2,
   MessageSquare,
+  MoreVertical,
   Reply,
   Search,
   Send,
   ShieldAlert,
+  Trash2,
   X,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -28,6 +33,22 @@ import {
   validateEvidenceFile,
 } from "@/lib/storage";
 
+export type ConversationFormDetails =
+  | {
+      kind: "claim";
+      status: string;
+      explanation: string;
+      identifying_features: string;
+      hidden_marks: string | null;
+      private_notes: string | null;
+    }
+  | {
+      kind: "found_response";
+      status: string;
+      description: string;
+      location_name: string;
+    };
+
 export interface ConversationItem {
   id: string;
   item_id: string;
@@ -38,8 +59,10 @@ export interface ConversationItem {
   recovery_case_id: string | null;
   other_user_id: string;
   other_user_name: string;
+  is_participant_a: boolean;
   last_message_at: string;
   unread_count: number;
+  form_details: ConversationFormDetails | null;
 }
 
 interface ChatMessage {
@@ -65,11 +88,20 @@ export function MessagesClient({
   initialConversations,
   initialConversationId,
 }: MessagesClientProps) {
-  const [conversations, setConversations] =
-    useState<ConversationItem[]>(initialConversations);
+  const router = useRouter();
+  const [deletedConvIds, setDeletedConvIds] = useState<Set<string>>(new Set());
+  const [readConvIds, setReadConvIds] = useState<Set<string>>(new Set());
+  const conversations = useMemo(
+    () =>
+      initialConversations
+        .filter((c) => !deletedConvIds.has(c.id))
+        .map((c) => (readConvIds.has(c.id) ? { ...c, unread_count: 0 } : c)),
+    [initialConversations, deletedConvIds, readConvIds]
+  );
   const [selectedId, setSelectedId] = useState<string | null>(
     initialConversationId ?? initialConversations[0]?.id ?? null
   );
+  const [showFormDetails, setShowFormDetails] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -84,6 +116,7 @@ export function MessagesClient({
   const [shareOnlineStatus, setShareOnlineStatus] = useState(true);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [otherTyping, setOtherTyping] = useState(false);
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportKind, setReportKind] = useState<"block" | "abuse_report">(
     "abuse_report"
@@ -95,11 +128,55 @@ export function MessagesClient({
     NonNullable<ReturnType<typeof createSupabaseBrowserClient>>["channel"]
   > | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const actionsMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!showActionsMenu) return;
+    function handleOutsideClick(event: MouseEvent) {
+      if (
+        actionsMenuRef.current &&
+        !actionsMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowActionsMenu(false);
+      }
+    }
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setShowActionsMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [showActionsMenu]);
 
   const selectedConv = useMemo(
     () => conversations.find((c) => c.id === selectedId) ?? null,
     [conversations, selectedId]
   );
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+
+    const channel = supabase
+      .channel(`user-convs:${currentUserId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "conversations" },
+        () => {
+          router.refresh();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId, router]);
 
   const filteredConversations = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -148,11 +225,7 @@ export function MessagesClient({
           .from("messages")
           .update({ read_at: now })
           .in("id", unreadIds);
-        setConversations((prev) =>
-          prev.map((c) =>
-            c.id === selectedId ? { ...c, unread_count: 0 } : c
-          )
-        );
+        setReadConvIds((prev) => new Set(prev).add(selectedId!));
       }
 
       // Sign attachment URLs
@@ -341,7 +414,11 @@ export function MessagesClient({
 
       await supabase
         .from("conversations")
-        .update({ last_message_at: new Date().toISOString() })
+        .update({
+          last_message_at: new Date().toISOString(),
+          deleted_by_a_at: null,
+          deleted_by_b_at: null,
+        })
         .eq("id", selectedConv.id);
 
       await supabase.from("notifications").insert({
@@ -392,6 +469,39 @@ export function MessagesClient({
         ? "User blocked and logged for safety."
         : "Safety report submitted for moderation review."
     );
+  }
+
+  async function handleDeleteConversation() {
+    if (!selectedConv) return;
+    const confirmed = window.confirm(
+      `Remove this conversation about "${selectedConv.item_title}" from your inbox? (The other user keeps their copy.)`
+    );
+    if (!confirmed) return;
+
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+
+    const now = new Date().toISOString();
+    const { error: delError } = await supabase
+      .from("conversations")
+      .update(
+        selectedConv.is_participant_a
+          ? { deleted_by_a_at: now }
+          : { deleted_by_b_at: now }
+      )
+      .eq("id", selectedConv.id);
+
+    if (delError) {
+      setError(delError.message);
+      return;
+    }
+
+    setShowActionsMenu(false);
+    const remaining = conversations.filter((c) => c.id !== selectedConv.id);
+    setDeletedConvIds((prev) => new Set(prev).add(selectedConv.id));
+    setSelectedId(remaining[0]?.id ?? null);
+    setMessages([]);
+    router.refresh();
   }
 
   const messageById = useMemo(
@@ -528,14 +638,41 @@ export function MessagesClient({
                 </Link>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowReportModal((v) => !v)}
-                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-              >
-                <Flag className="h-3.5 w-3.5 text-red-500" />
-                Block / Report
-              </button>
+              <div className="relative" ref={actionsMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowActionsMenu((v) => !v)}
+                  title="Conversation options"
+                  aria-label="Conversation options"
+                  className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+
+                {showActionsMenu && (
+                  <div className="absolute right-0 mt-1.5 w-48 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg py-1 z-20">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowActionsMenu(false);
+                        setShowReportModal((v) => !v);
+                      }}
+                      className="w-full px-3.5 py-2 text-left text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center gap-2 cursor-pointer"
+                    >
+                      <Flag className="h-3.5 w-3.5 text-amber-600" />
+                      Block / Report User
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDeleteConversation}
+                      className="w-full px-3.5 py-2 text-left text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 inline-flex items-center gap-2 cursor-pointer"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Delete Conversation
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {notice && (
@@ -630,13 +767,83 @@ export function MessagesClient({
                   </p>
                 </div>
               </div>
-              <Link
-                href={`/items/${selectedConv.item_id}`}
-                className="text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:underline shrink-0"
-              >
-                View Listing
-              </Link>
+              <div className="flex items-center gap-3 shrink-0">
+                {selectedConv.recovery_case_id && (
+                  <Link
+                    href="/recovery"
+                    className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline"
+                  >
+                    Recovery Center →
+                  </Link>
+                )}
+                <Link
+                  href={`/items/${selectedConv.item_id}`}
+                  className="text-xs font-medium text-slate-600 dark:text-slate-300 hover:underline"
+                >
+                  View Listing
+                </Link>
+              </div>
             </div>
+
+            {selectedConv.form_details && (
+              <div className="px-4 py-2.5 bg-emerald-50/60 dark:bg-emerald-950/30 border-b border-emerald-200/70 dark:border-emerald-900/60 text-xs space-y-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowFormDetails((v) => !v)}
+                  className="w-full flex items-center justify-between font-semibold text-emerald-900 dark:text-emerald-200 cursor-pointer"
+                >
+                  <span>
+                    {selectedConv.form_details.kind === "claim"
+                      ? `Submitted Claim Details (${selectedConv.form_details.status.replaceAll("_", " ")})`
+                      : `Submitted Found Response Details (${selectedConv.form_details.status.replaceAll("_", " ")})`}
+                  </span>
+                  {showFormDetails ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </button>
+                {showFormDetails && (
+                  <div className="text-slate-700 dark:text-slate-300 space-y-1 pt-1">
+                    {selectedConv.form_details.kind === "claim" ? (
+                      <>
+                        <p>
+                          <strong>Explanation:</strong>{" "}
+                          {selectedConv.form_details.explanation}
+                        </p>
+                        <p>
+                          <strong>Identifying Features:</strong>{" "}
+                          {selectedConv.form_details.identifying_features}
+                        </p>
+                        {selectedConv.form_details.hidden_marks && (
+                          <p>
+                            <strong>Hidden Marks:</strong>{" "}
+                            {selectedConv.form_details.hidden_marks}
+                          </p>
+                        )}
+                        {selectedConv.form_details.private_notes && (
+                          <p>
+                            <strong>Private Notes:</strong>{" "}
+                            {selectedConv.form_details.private_notes}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p>
+                          <strong>Found Description:</strong>{" "}
+                          {selectedConv.form_details.description}
+                        </p>
+                        <p>
+                          <strong>Discovery Location:</strong>{" "}
+                          {selectedConv.form_details.location_name}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="px-4 py-2 bg-slate-50 dark:bg-slate-950/50 border-b border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 inline-flex items-center gap-1.5">
               <ShieldAlert className="h-3.5 w-3.5 text-amber-600 shrink-0" />

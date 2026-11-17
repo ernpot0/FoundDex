@@ -1,9 +1,11 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { Award, Mail, ShieldCheck, UserCheck } from "lucide-react";
+import { Award, Mail, ShieldAlert, ShieldCheck, UserCheck } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getRecognitionTier } from "@/lib/recognition";
 
 async function AccountContent() {
   await connection();
@@ -22,9 +24,12 @@ async function AccountContent() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, trust_points, created_at")
+    .select("full_name, trust_points, is_admin, created_at")
     .eq("id", user.id)
     .maybeSingle();
+
+  const trustPoints = profile?.trust_points ?? 0;
+  const tier = getRecognitionTier(trustPoints);
 
   return (
     <div className="space-y-6">
@@ -50,15 +55,31 @@ async function AccountContent() {
               Trust Points
             </div>
             <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
-              {profile?.trust_points ?? 0}
+              {trustPoints}
             </div>
+            <span
+              className={`inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${tier.badgeClassName}`}
+            >
+              {tier.name}
+            </span>
           </div>
         </div>
 
         <div className="border-t border-slate-200 dark:border-slate-800 pt-5 flex items-center justify-between gap-4 flex-wrap">
-          <div className="inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <ShieldCheck className="h-4 w-4 text-emerald-600" />
-            Protected by Supabase Auth &amp; Row-Level Security
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <ShieldCheck className="h-4 w-4 text-emerald-600" />
+              Protected by Supabase Auth &amp; Row-Level Security
+            </div>
+            {profile?.is_admin && (
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline"
+              >
+                <ShieldAlert className="h-4 w-4" />
+                Admin Moderation
+              </Link>
+            )}
           </div>
 
           <form action="/auth/signout" method="post">

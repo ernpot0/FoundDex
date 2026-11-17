@@ -44,6 +44,7 @@ async function RecentReportsSection() {
   const { data: items } = await supabase
     .from("items")
     .select("id, report_type, title, category, location_name, created_at")
+    .in("status", ["open", "matched"])
     .order("created_at", { ascending: false })
     .limit(6);
 

@@ -21,7 +21,7 @@ export async function getOrCreateConversation(
 
   const { data: existing, error: fetchError } = await supabase
     .from("conversations")
-    .select("id, recovery_case_id")
+    .select("id, recovery_case_id, deleted_by_a_at, deleted_by_b_at")
     .eq("item_id", params.itemId)
     .eq("participant_a", participantA)
     .eq("participant_b", participantB)
@@ -32,10 +32,21 @@ export async function getOrCreateConversation(
   }
 
   if (existing) {
-    if (params.recoveryCaseId && !existing.recovery_case_id) {
+    const needsCaseLink =
+      Boolean(params.recoveryCaseId) && !existing.recovery_case_id;
+    const isDeletedForA =
+      params.userIdA === participantA && Boolean(existing.deleted_by_a_at);
+    const isDeletedForB =
+      params.userIdA === participantB && Boolean(existing.deleted_by_b_at);
+
+    if (needsCaseLink || isDeletedForA || isDeletedForB) {
       await supabase
         .from("conversations")
-        .update({ recovery_case_id: params.recoveryCaseId })
+        .update({
+          ...(needsCaseLink ? { recovery_case_id: params.recoveryCaseId } : {}),
+          ...(isDeletedForA ? { deleted_by_a_at: null } : {}),
+          ...(isDeletedForB ? { deleted_by_b_at: null } : {}),
+        })
         .eq("id", existing.id);
     }
     return { id: existing.id };

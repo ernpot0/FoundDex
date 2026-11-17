@@ -38,6 +38,7 @@ export interface FoundResponseRecord {
 interface LostItemActionSectionProps {
   itemId: string;
   itemTitle: string;
+  itemStatus: string;
   ownerId: string;
   currentUserId: string | null;
   foundResponses: FoundResponseRecord[];
@@ -46,6 +47,7 @@ interface LostItemActionSectionProps {
 export function LostItemActionSection({
   itemId,
   itemTitle,
+  itemStatus,
   ownerId,
   currentUserId,
   foundResponses,
@@ -242,6 +244,15 @@ export function LostItemActionSection({
     } finally {
       setBusy(false);
     }
+  }
+
+  if (itemStatus === "returned" || itemStatus === "closed") {
+    return (
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 p-5 text-sm text-slate-600 dark:text-slate-400">
+        This listing is <strong>{itemStatus}</strong> and is no longer accepting
+        new responses.
+      </div>
+    );
   }
 
   if (!currentUserId) {

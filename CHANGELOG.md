@@ -2,6 +2,14 @@
 
 All notable changes to **FoundDex** are documented in this file.
 
+## [0.6.0] - 2026-11-17 — Phase 6: Recognition, Finder Certificates & Admin Moderation
+
+### Added
+- Database migration (`supabase/migrations/202611170003_phase6_rewards_moderation.sql`) adding `finder_certificates`, `profiles.is_admin`, `moderation_audit_logs`, and the `issue_finder_reward_on_completion()` trigger (only awarding +25 Trust Points & issuing a certificate after dual return confirmation).
+- Recognition tier system (`src/lib/recognition.ts`, `src/lib/recognition.test.ts`).
+- Printable Finder Certificate page (`/certificates/[id]`, `src/components/PrintCertificateButton.tsx`) and Rewards tab updates in `/recovery` and `/account`.
+- Admin Moderation & Dispute Resolution Center (`/admin`, `src/components/AdminModerationClient.tsx`) with audit logging.
+
 ## [0.5.0] - 2026-11-17 — Phase 5: Two-Way Item Recovery, Claims, Private Messaging & Recovery Center
 
 ### Added

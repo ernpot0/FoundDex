@@ -1,6 +1,6 @@
 # FoundDex Development Progress
 
-**Current Phase:** Phase 6 — Recognition, Rewards, Certificates & Admin Moderation  
+**Current Phase:** Phase 7 — Playwright End-to-End Tests & Google Cloud Run Deployment  
 **Last Updated:** 2026-11-17
 
 ---
@@ -72,10 +72,18 @@
 - [x] Ran `supabase/migrations/202611170002_two_way_recovery_schema.sql` in Supabase Dashboard SQL Editor.
 - [x] Owner tested Found Item claims, Lost Item two-button workflow, `/messages`, and `/recovery` dual confirmation and approved Phase 5.
 
-### Phase 6 (In Progress)
-- [ ] Add `certificates` & `is_admin` / moderation support in `supabase/migrations/202611170003_phase6_rewards_moderation.sql` (strictly gating rewards & certificates on dual-confirmed `completed` recovery cases).
-- [ ] Build Finder Recognition, Trust Points, Badges, and Printable/Downloadable Finder Certificates (`/certificates/[id]` and `/recovery` Rewards tab).
-- [ ] Build Admin Moderation & Dispute Resolution Center (`/admin`) with audit logging.
+### Phase 6 (Completed)
+- [x] Added `finder_certificates`, `is_admin`, `moderation_audit_logs`, and `issue_finder_reward_on_completion()` trigger in `supabase/migrations/202611170003_phase6_rewards_moderation.sql` (strictly gating rewards & certificates on dual-confirmed `completed` returns).
+- [x] Built Recognition Tier badges (`src/lib/recognition.ts`, `src/lib/recognition.test.ts`), Printable Finder Certificate page (`/certificates/[id]`), and updated `/recovery` Rewards tab & `/account`.
+- [x] Built Admin Moderation & Dispute Resolution Center (`/admin`, `src/components/AdminModerationClient.tsx`) with audit logging.
+- [x] Added per-user conversation deletion (`202611170005_per_user_conversation_delete.sql`), three-dots dropdown menu with auto-close, full live Realtime sync (`LiveItemSync.tsx`, `LiveMessagesNavLink.tsx`), and closed/returned item visibility + 30-day automatic cleanup (`202611170006_closed_items_visibility_and_cleanup.sql`).
+- [x] Verified unit tests (22/22), ESLint (0 errors), and Next.js production build.
+- [x] Owner tested and approved Phase 6.
+
+### Phase 7 (In Progress)
+- [ ] Install Playwright (`@playwright/test`) and create end-to-end tests covering homepage, browse/search, login, health endpoint, and protected route redirects.
+- [ ] Configure `next.config.ts` (`output: "standalone"`) and create production `Dockerfile` + `.dockerignore` for Google Cloud Run.
+- [ ] Create `DEPLOYMENT.md` with step-by-step Google Cloud Run deployment & custom domain (`founddex.com`) instructions.
 
 ### Upcoming Phases (Not Started)
 - [ ] Phase 2: Supabase database schema, authentication, and file storage.

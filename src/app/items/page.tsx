@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Calendar, MapPin, PlusCircle, Search, Tag } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { ItemsMap } from "@/components/ItemsMap";
+import { LiveItemSync } from "@/components/LiveItemSync";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   getCategoryLabel,
@@ -42,6 +43,7 @@ async function ItemsResults({ searchParams }: ItemsPageProps) {
     .select(
       "id, report_type, status, title, category, description, location_name, latitude, longitude, occurred_at, photo_path, created_at"
     )
+    .in("status", ["open", "matched"])
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -85,6 +87,7 @@ async function ItemsResults({ searchParams }: ItemsPageProps) {
 
   return (
     <div className="space-y-8">
+      <LiveItemSync />
       <form
         method="get"
         action="/items"
