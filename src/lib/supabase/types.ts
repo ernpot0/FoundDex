@@ -1,6 +1,7 @@
 /**
- * TypeScript database definitions for FoundDex (Phase 2).
- * Matches supabase/migrations/202611160001_initial_schema.sql.
+ * TypeScript database definitions for FoundDex.
+ * Matches supabase/migrations/202611160001_initial_schema.sql
+ * and supabase/migrations/202611170002_two_way_recovery_schema.sql.
  */
 export type Json =
   | string
@@ -12,7 +13,41 @@ export type Json =
 
 export type ReportType = "lost" | "found";
 export type ItemStatus = "open" | "matched" | "returned" | "closed";
-export type ClaimStatus = "pending" | "approved" | "rejected" | "withdrawn";
+
+export type ClaimStatus =
+  | "submitted"
+  | "under_review"
+  | "more_info_requested"
+  | "selected_for_verification"
+  | "rejected"
+  | "closed"
+  | "withdrawn"
+  | "spam";
+
+export type FoundResponseStatus =
+  | "submitted"
+  | "under_review"
+  | "selected_for_verification"
+  | "closed"
+  | "withdrawn";
+
+export type RecoveryCaseStatus =
+  | "submitted"
+  | "under_review"
+  | "more_info_requested"
+  | "selected_for_verification"
+  | "return_arranged"
+  | "awaiting_owner_confirmation"
+  | "completed"
+  | "disputed"
+  | "cancelled";
+
+export type ReportDisputeKind = "block" | "abuse_report" | "dispute";
+export type ReportDisputeStatus =
+  | "open"
+  | "under_review"
+  | "resolved"
+  | "dismissed";
 
 export interface Database {
   public: {
@@ -108,8 +143,14 @@ export interface Database {
           id: string;
           item_id: string;
           claimant_id: string;
-          verification_note: string;
+          explanation: string;
+          identifying_features: string;
+          hidden_marks: string | null;
+          private_notes: string | null;
+          photo_paths: string[];
+          document_paths: string[];
           status: ClaimStatus;
+          reopened_count: number;
           created_at: string;
           updated_at: string;
         };
@@ -117,8 +158,14 @@ export interface Database {
           id?: string;
           item_id: string;
           claimant_id: string;
-          verification_note: string;
+          explanation: string;
+          identifying_features: string;
+          hidden_marks?: string | null;
+          private_notes?: string | null;
+          photo_paths?: string[];
+          document_paths?: string[];
           status?: ClaimStatus;
+          reopened_count?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -126,8 +173,14 @@ export interface Database {
           id?: string;
           item_id?: string;
           claimant_id?: string;
-          verification_note?: string;
+          explanation?: string;
+          identifying_features?: string;
+          hidden_marks?: string | null;
+          private_notes?: string | null;
+          photo_paths?: string[];
+          document_paths?: string[];
           status?: ClaimStatus;
+          reopened_count?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -148,9 +201,293 @@ export interface Database {
           },
         ];
       };
+      found_responses: {
+        Row: {
+          id: string;
+          item_id: string;
+          finder_id: string;
+          description: string;
+          location_name: string;
+          latitude: number | null;
+          longitude: number | null;
+          photo_paths: string[];
+          status: FoundResponseStatus;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          item_id: string;
+          finder_id: string;
+          description: string;
+          location_name: string;
+          latitude?: number | null;
+          longitude?: number | null;
+          photo_paths?: string[];
+          status?: FoundResponseStatus;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          item_id?: string;
+          finder_id?: string;
+          description?: string;
+          location_name?: string;
+          latitude?: number | null;
+          longitude?: number | null;
+          photo_paths?: string[];
+          status?: FoundResponseStatus;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      recovery_cases: {
+        Row: {
+          id: string;
+          item_id: string;
+          claim_id: string | null;
+          found_response_id: string | null;
+          finder_id: string;
+          owner_id: string;
+          status: RecoveryCaseStatus;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          item_id: string;
+          claim_id?: string | null;
+          found_response_id?: string | null;
+          finder_id: string;
+          owner_id: string;
+          status?: RecoveryCaseStatus;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          item_id?: string;
+          claim_id?: string | null;
+          found_response_id?: string | null;
+          finder_id?: string;
+          owner_id?: string;
+          status?: RecoveryCaseStatus;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      conversations: {
+        Row: {
+          id: string;
+          item_id: string;
+          recovery_case_id: string | null;
+          participant_a: string;
+          participant_b: string;
+          last_message_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          item_id: string;
+          recovery_case_id?: string | null;
+          participant_a: string;
+          participant_b: string;
+          last_message_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          item_id?: string;
+          recovery_case_id?: string | null;
+          participant_a?: string;
+          participant_b?: string;
+          last_message_at?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      messages: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          sender_id: string;
+          body: string;
+          attachment_paths: string[];
+          reply_to_id: string | null;
+          delivered_at: string;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          sender_id: string;
+          body: string;
+          attachment_paths?: string[];
+          reply_to_id?: string | null;
+          delivered_at?: string;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          conversation_id?: string;
+          sender_id?: string;
+          body?: string;
+          attachment_paths?: string[];
+          reply_to_id?: string | null;
+          delivered_at?: string;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      return_confirmations: {
+        Row: {
+          id: string;
+          recovery_case_id: string;
+          finder_confirmed_at: string | null;
+          finder_note: string | null;
+          owner_confirmed_at: string | null;
+          owner_note: string | null;
+          completed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          recovery_case_id: string;
+          finder_confirmed_at?: string | null;
+          finder_note?: string | null;
+          owner_confirmed_at?: string | null;
+          owner_note?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          recovery_case_id?: string;
+          finder_confirmed_at?: string | null;
+          finder_note?: string | null;
+          owner_confirmed_at?: string | null;
+          owner_note?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: string;
+          title: string;
+          body: string;
+          link_url: string | null;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: string;
+          title: string;
+          body: string;
+          link_url?: string | null;
+          read_at?: string | null;
+          created_at?: string;
+          };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: string;
+          title?: string;
+          body?: string;
+          link_url?: string | null;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      reports_and_disputes: {
+        Row: {
+          id: string;
+          reporter_id: string;
+          reported_user_id: string | null;
+          item_id: string | null;
+          recovery_case_id: string | null;
+          conversation_id: string | null;
+          kind: ReportDisputeKind;
+          reason: string;
+          status: ReportDisputeStatus;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          reporter_id: string;
+          reported_user_id?: string | null;
+          item_id?: string | null;
+          recovery_case_id?: string | null;
+          conversation_id?: string | null;
+          kind: ReportDisputeKind;
+          reason: string;
+          status?: ReportDisputeStatus;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          reporter_id?: string;
+          reported_user_id?: string | null;
+          item_id?: string | null;
+          recovery_case_id?: string | null;
+          conversation_id?: string | null;
+          kind?: ReportDisputeKind;
+          reason?: string;
+          status?: ReportDisputeStatus;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      recovery_audit_logs: {
+        Row: {
+          id: string;
+          recovery_case_id: string;
+          actor_id: string;
+          action: string;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          recovery_case_id: string;
+          actor_id: string;
+          action: string;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          recovery_case_id?: string;
+          actor_id?: string;
+          action?: string;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      get_item_claim_counts: {
+        Args: { p_item_ids: string[] };
+        Returns: { item_id: string; active_claim_count: number }[];
+      };
+    };
     Enums: Record<string, never>;
   };
 }

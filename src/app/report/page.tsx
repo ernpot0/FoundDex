@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Navbar } from "@/components/Navbar";
 import { ReportItemForm } from "@/components/ReportItemForm";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -9,6 +10,7 @@ interface ReportPageProps {
 }
 
 async function ReportPageContent({ searchParams }: ReportPageProps) {
+  await connection();
   const supabase = await createSupabaseServerClient();
   if (!supabase) {
     redirect("/login");

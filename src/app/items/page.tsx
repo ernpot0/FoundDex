@@ -10,6 +10,7 @@ import {
   getItemPhotoUrl,
   ITEM_CATEGORIES,
 } from "@/lib/items";
+import { formatPublicClaimCount } from "@/lib/claims";
 
 interface ItemsPageProps {
   searchParams: Promise<{
@@ -68,6 +69,19 @@ async function ItemsResults({ searchParams }: ItemsPageProps) {
   }
 
   const list = items ?? [];
+  const foundIds = list
+    .filter((i) => i.report_type === "found")
+    .map((i) => i.id);
+
+  const claimCountMap = new Map<string, number>();
+  if (foundIds.length > 0) {
+    const { data: counts } = await supabase.rpc("get_item_claim_counts", {
+      p_item_ids: foundIds,
+    });
+    for (const row of counts ?? []) {
+      claimCountMap.set(row.item_id, Number(row.active_claim_count ?? 0));
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -199,6 +213,12 @@ async function ItemsResults({ searchParams }: ItemsPageProps) {
                   <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 flex-1">
                     {item.description}
                   </p>
+
+                  {!isLost && (
+                    <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                      {formatPublicClaimCount(claimCountMap.get(item.id) ?? 0)}
+                    </p>
+                  )}
 
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 gap-2">
                     <span className="inline-flex items-center gap-1 truncate">

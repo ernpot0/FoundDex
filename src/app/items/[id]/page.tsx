@@ -2,17 +2,18 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import {
-  ArrowLeft,
-  Calendar,
-  MapPin,
-  ShieldCheck,
-  Tag,
-  User,
-} from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Tag, User } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { ItemsMap } from "@/components/ItemsMap";
 import { MatchSuggestionsPanel } from "@/components/MatchSuggestionsPanel";
+import {
+  FoundItemClaimSection,
+  type PrivateClaimRecord,
+} from "@/components/FoundItemClaimSection";
+import {
+  LostItemActionSection,
+  type FoundResponseRecord,
+} from "@/components/LostItemActionSection";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCategoryLabel, getItemPhotoUrl } from "@/lib/items";
 
@@ -49,6 +50,77 @@ async function ItemDetailContent({
     .select("full_name")
     .eq("id", item.user_id)
     .maybeSingle();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let publicClaimCount = 0;
+  let privateClaims: PrivateClaimRecord[] = [];
+  let foundResponses: FoundResponseRecord[] = [];
+
+  if (item.report_type === "found") {
+    const { data: countsData } = await supabase.rpc("get_item_claim_counts", {
+      p_item_ids: [item.id],
+    });
+    publicClaimCount = Number(countsData?.[0]?.active_claim_count ?? 0);
+
+    if (user) {
+      const { data: claimsData } = await supabase
+        .from("claims")
+        .select(
+          "id, claimant_id, explanation, identifying_features, hidden_marks, private_notes, photo_paths, document_paths, status, reopened_count, created_at"
+        )
+        .eq("item_id", item.id)
+        .order("created_at", { ascending: false });
+
+      const claimantIds = Array.from(
+        new Set((claimsData ?? []).map((c) => c.claimant_id))
+      );
+      const nameMap = new Map<string, string | null>();
+      if (claimantIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", claimantIds);
+        for (const p of profilesData ?? []) {
+          nameMap.set(p.id, p.full_name);
+        }
+      }
+
+      privateClaims = (claimsData ?? []).map((c) => ({
+        ...c,
+        claimant_name: nameMap.get(c.claimant_id) ?? null,
+      }));
+    }
+  } else if (user) {
+    const { data: respData } = await supabase
+      .from("found_responses")
+      .select(
+        "id, finder_id, description, location_name, latitude, longitude, photo_paths, status, created_at"
+      )
+      .eq("item_id", item.id)
+      .order("created_at", { ascending: false });
+
+    const finderIds = Array.from(
+      new Set((respData ?? []).map((r) => r.finder_id))
+    );
+    const nameMap = new Map<string, string | null>();
+    if (finderIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", finderIds);
+      for (const p of profilesData ?? []) {
+        nameMap.set(p.id, p.full_name);
+      }
+    }
+
+    foundResponses = (respData ?? []).map((r) => ({
+      ...r,
+      finder_name: nameMap.get(r.finder_id) ?? null,
+    }));
+  }
 
   const photoUrl = getItemPhotoUrl(item.photo_path);
   const isLost = item.report_type === "lost";
@@ -133,21 +205,30 @@ async function ItemDetailContent({
             </div>
           )}
 
-          <MatchSuggestionsPanel itemId={item.id} reportType={item.report_type} />
+          <MatchSuggestionsPanel
+            itemId={item.id}
+            reportType={item.report_type}
+          />
 
-          <div className="rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-950/40 p-4 flex items-start gap-3">
-            <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-            <div className="text-sm text-slate-700 dark:text-slate-300 space-y-1">
-              <p className="font-semibold">
-                Safe Ownership Verification (Coming in Phase 5)
-              </p>
-              <p className="text-slate-600 dark:text-slate-400">
-                In an upcoming phase, you will be able to submit ownership
-                verification answers and coordinate a safe return directly
-                through FoundDex without exposing personal contact details.
-              </p>
-            </div>
-          </div>
+          {item.report_type === "found" ? (
+            <FoundItemClaimSection
+              itemId={item.id}
+              itemTitle={item.title}
+              finderId={item.user_id}
+              itemStatus={item.status}
+              publicClaimCount={publicClaimCount}
+              currentUserId={user?.id ?? null}
+              privateClaims={privateClaims}
+            />
+          ) : (
+            <LostItemActionSection
+              itemId={item.id}
+              itemTitle={item.title}
+              ownerId={item.user_id}
+              currentUserId={user?.id ?? null}
+              foundResponses={foundResponses}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -170,4 +251,3 @@ export default function ItemDetailPage(props: ItemDetailPageProps) {
     </div>
   );
 }
-

@@ -2,6 +2,15 @@
 
 All notable changes to **FoundDex** are documented in this file.
 
+## [0.5.0] - 2026-11-17 — Phase 5: Two-Way Item Recovery, Claims, Private Messaging & Recovery Center
+
+### Added
+- Separate database models and RLS migration (`supabase/migrations/202611170002_two_way_recovery_schema.sql`) for `claims`, `found_responses`, `conversations`, `messages`, `recovery_cases`, `return_confirmations`, `notifications`, `reports_and_disputes`, `recovery_audit_logs`, `get_item_claim_counts` RPC, and private `claim-evidence` bucket.
+- Found Item workflow (`src/components/FoundItemClaimSection.tsx`) with public active claim counts (`"X people have claimed this item."`), structured private claim form, and Finder review/selection.
+- Lost Item two-button workflow (`src/components/LostItemActionSection.tsx`) separating **Chat with Owner** from **I Found This Item**.
+- WhatsApp-style private messaging (`/messages`, `src/components/MessagesClient.tsx`) powered by Supabase Realtime (live messages, typing, online presence toggle, replies, attachments, read receipts, block/report).
+- Recovery Center dashboard (`/recovery`, `src/components/RecoveryCenterClient.tsx`) with all 9 recovery case statuses, dual return confirmation, and dispute reporting.
+
 ## [0.4.0] - 2026-11-16 — Phase 4: AI-Assisted Matching (Google Gemini)
 
 ### Added

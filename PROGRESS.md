@@ -1,6 +1,6 @@
 # FoundDex Development Progress
 
-**Current Phase:** Phase 5 — Ownership Verification, Safe Return & Messaging  
+**Current Phase:** Phase 6 — Recognition, Rewards, Certificates & Admin Moderation  
 **Last Updated:** 2026-11-17
 
 ---
@@ -61,12 +61,21 @@
 - [x] Verified unit tests (13/13), ESLint (0 errors), and Next.js production build.
 - [x] Owner tested match suggestions (72% match) and approved Phase 4.
 
-### Phase 5 (In Progress)
-- [ ] Add `messages` table with Row-Level Security (RLS) in a new Supabase migration (`supabase/migrations/202611170001_phase5_messages.sql`) for safe claim-scoped messaging.
-- [ ] Update TypeScript `Database` types (`src/lib/supabase/types.ts`) for `messages`.
-- [ ] Build Zod validation & helpers for ownership claims and safe return messages (`src/lib/claims.ts`, `src/lib/claims.test.ts`).
-- [ ] Build Ownership Verification & Claim Panel (`src/components/ClaimPanel.tsx`) on `/items/[id]` where users can submit verification proof and item owners can approve/reject claims or mark items as returned.
-- [ ] Build Safe In-App Messaging Panel (`src/components/ClaimMessages.tsx`) unlocked once a claim is submitted/approved, without exposing personal phone numbers or emails.
+### Phase 5 (Completed)
+- [x] Created separate database tables & RLS migration (`supabase/migrations/202611170002_two_way_recovery_schema.sql`): `claims`, `found_responses`, `recovery_cases`, `conversations`, `messages`, `return_confirmations`, `notifications`, `reports_and_disputes`, `recovery_audit_logs`, `get_item_claim_counts` RPC, and private `claim-evidence` storage bucket.
+- [x] Updated TypeScript `Database` types (`src/lib/supabase/types.ts`) and validation helpers (`src/lib/claims.ts`, `src/lib/claims.test.ts`, `src/lib/storage.ts`, `src/lib/conversations.ts`).
+- [x] Built **Found Item Workflow** (`src/components/FoundItemClaimSection.tsx`): public `"X people have claimed this item."` count (without exposing identities/evidence), prominent **Claim This Item** button, structured private claim form with photo/document uploads, reopen withdrawn claim, and Finder's private claim review/selection.
+- [x] Built **Lost Item Two-Button Workflow** (`src/components/LostItemActionSection.tsx`): separate **Chat with Owner** and **I Found This Item** (formal Found Response + notification + chat) actions.
+- [x] Built **WhatsApp-Style Private Messaging** (`/messages`, `src/components/MessagesClient.tsx`) with Supabase Realtime live messages, typing indicators, online status privacy toggle, replies, attachments, read receipts, search, item-first conversation cards, and Block/Report User.
+- [x] Built **Recovery Center Dashboard** (`/recovery`, `src/components/RecoveryCenterClient.tsx`) with all 9 recovery statuses, **Dual Return Confirmation** (Finder handover + Owner receipt), and Dispute reporting.
+- [x] Verified unit tests (18/18), ESLint (0 errors), and Next.js production build.
+- [x] Ran `supabase/migrations/202611170002_two_way_recovery_schema.sql` in Supabase Dashboard SQL Editor.
+- [x] Owner tested Found Item claims, Lost Item two-button workflow, `/messages`, and `/recovery` dual confirmation and approved Phase 5.
+
+### Phase 6 (In Progress)
+- [ ] Add `certificates` & `is_admin` / moderation support in `supabase/migrations/202611170003_phase6_rewards_moderation.sql` (strictly gating rewards & certificates on dual-confirmed `completed` recovery cases).
+- [ ] Build Finder Recognition, Trust Points, Badges, and Printable/Downloadable Finder Certificates (`/certificates/[id]` and `/recovery` Rewards tab).
+- [ ] Build Admin Moderation & Dispute Resolution Center (`/admin`) with audit logging.
 
 ### Upcoming Phases (Not Started)
 - [ ] Phase 2: Supabase database schema, authentication, and file storage.

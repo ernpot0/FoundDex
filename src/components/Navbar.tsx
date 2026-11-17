@@ -61,7 +61,7 @@ export function Navbar() {
           </div>
         </Link>
 
-        <nav className="flex items-center gap-4">
+        <nav className="flex items-center gap-4 flex-wrap">
           <Link
             href="/items"
             className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition-colors"
@@ -73,6 +73,18 @@ export function Navbar() {
             className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition-colors"
           >
             Report Item
+          </Link>
+          <Link
+            href="/recovery"
+            className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition-colors"
+          >
+            Recovery Center
+          </Link>
+          <Link
+            href="/messages"
+            className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition-colors"
+          >
+            Messages
           </Link>
           <Suspense
             fallback={
