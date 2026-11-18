@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
@@ -7,6 +8,7 @@ import { Navbar } from "@/components/Navbar";
 import { ItemsMap } from "@/components/ItemsMap";
 import { LiveItemSync } from "@/components/LiveItemSync";
 import { MatchSuggestionsPanel } from "@/components/MatchSuggestionsPanel";
+import { ShareButton } from "@/components/ShareButton";
 import {
   FoundItemClaimSection,
   type PrivateClaimRecord,
@@ -20,6 +22,56 @@ import { getCategoryLabel, getItemPhotoUrl } from "@/lib/items";
 
 interface ItemDetailPageProps {
   params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: ItemDetailPageProps): Promise<Metadata> {
+  await connection();
+  const { id } = await params;
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) {
+    return { title: "Item Listing" };
+  }
+
+  const { data: item } = await supabase
+    .from("items")
+    .select("id, report_type, title, category, description, location_name")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!item) {
+    return {
+      title: "Item Not Found",
+      description: "This FoundDex listing could not be found.",
+    };
+  }
+
+  const badge = item.report_type === "lost" ? "LOST" : "FOUND";
+  const categoryLabel = getCategoryLabel(item.category);
+  const fullTitle = `[${badge}] ${item.title}`;
+  const cleanDescription = item.description.replace(/\s+/g, " ").trim();
+  const snippet =
+    cleanDescription.length > 140
+      ? `${cleanDescription.slice(0, 139).trimEnd()}…`
+      : cleanDescription;
+  const description = `${categoryLabel} • ${item.location_name}${snippet ? ` — ${snippet}` : ""}`;
+
+  return {
+    title: fullTitle,
+    description,
+    openGraph: {
+      type: "article",
+      title: fullTitle,
+      description,
+      url: `/items/${item.id}`,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: fullTitle,
+      description,
+    },
+  };
 }
 
 async function ItemDetailContent({
@@ -150,23 +202,31 @@ async function ItemDetailContent({
         )}
 
         <div className="p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span
-              className={`text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-full ${
-                isLost
-                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                  : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-              }`}
-            >
-              {item.report_type}
-            </span>
-            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 inline-flex items-center gap-1">
-              <Tag className="h-3.5 w-3.5" />
-              {getCategoryLabel(item.category)}
-            </span>
-            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 capitalize">
-              Status: {item.status}
-            </span>
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={`text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-full ${isLost
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                    : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                  }`}
+              >
+                {item.report_type}
+              </span>
+              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 inline-flex items-center gap-1">
+                <Tag className="h-3.5 w-3.5" />
+                {getCategoryLabel(item.category)}
+              </span>
+              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 capitalize">
+                Status: {item.status}
+              </span>
+            </div>
+
+            <ShareButton
+              title={`[${item.report_type.toUpperCase()}] ${item.title}`}
+              text={`${getCategoryLabel(item.category)} • ${item.location_name}`}
+              path={`/items/${item.id}`}
+              label="Share post"
+            />
           </div>
 
           <div className="space-y-2">

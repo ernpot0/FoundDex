@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { getSiteUrl } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,10 +13,30 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = getSiteUrl();
+const defaultTitle = "FoundDex — Find. Verify. Return.";
+const defaultDescription =
+  "A global lost-and-found platform to report lost or found items, verify ownership safely, and coordinate returns.";
+
 export const metadata: Metadata = {
-  title: "FoundDex — Find. Verify. Return.",
-  description:
-    "A global lost-and-found platform to report lost or found items, verify ownership safely, and coordinate returns.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: defaultTitle,
+    template: "%s | FoundDex",
+  },
+  description: defaultDescription,
+  openGraph: {
+    type: "website",
+    siteName: "FoundDex",
+    title: defaultTitle,
+    description: defaultDescription,
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: defaultTitle,
+    description: defaultDescription,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
