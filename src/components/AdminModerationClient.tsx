@@ -414,11 +414,11 @@ export function AdminModerationClient({
     () =>
       q
         ? items.filter(
-            (i) =>
-              i.title.toLowerCase().includes(q) ||
-              i.location_name.toLowerCase().includes(q) ||
-              i.poster_name.toLowerCase().includes(q)
-          )
+          (i) =>
+            i.title.toLowerCase().includes(q) ||
+            i.location_name.toLowerCase().includes(q) ||
+            i.poster_name.toLowerCase().includes(q)
+        )
         : items,
     [items, q]
   );
@@ -427,10 +427,10 @@ export function AdminModerationClient({
     () =>
       q
         ? users.filter(
-            (u) =>
-              u.full_name.toLowerCase().includes(q) ||
-              u.id.toLowerCase().includes(q)
-          )
+          (u) =>
+            u.full_name.toLowerCase().includes(q) ||
+            u.id.toLowerCase().includes(q)
+        )
         : users,
     [users, q]
   );
@@ -513,11 +513,10 @@ export function AdminModerationClient({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
-                activeTab === tab.id
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${activeTab === tab.id
                   ? "bg-emerald-600 text-white"
                   : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-              }`}
+                }`}
             >
               {tab.label}
               {typeof tab.count === "number" ? ` (${tab.count})` : ""}
@@ -573,11 +572,10 @@ export function AdminModerationClient({
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
-                        className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                          item.report_type === "lost"
+                        className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${item.report_type === "lost"
                             ? "bg-amber-100 text-amber-800"
                             : "bg-emerald-100 text-emerald-800"
-                        }`}
+                          }`}
                       >
                         {item.report_type}
                       </span>
@@ -854,11 +852,10 @@ export function AdminModerationClient({
                       type="button"
                       disabled={busy}
                       onClick={() => handleToggleUserFlag(u, "is_suspended")}
-                      className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium cursor-pointer ${
-                        u.is_suspended
+                      className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium cursor-pointer ${u.is_suspended
                           ? "border border-emerald-300 text-emerald-700 hover:bg-emerald-50"
                           : "border border-red-300 text-red-700 hover:bg-red-50"
-                      }`}
+                        }`}
                     >
                       {u.is_suspended ? (
                         <>

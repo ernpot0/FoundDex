@@ -54,3 +54,39 @@ body {
     animation: none;
   }
 }
+
+.certificate-guilloche {
+  background-color: #fafbf9;
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.04) 0%, transparent 60%),
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      transparent 0,
+      transparent 18px,
+      rgba(5, 150, 105, 0.025) 19px,
+      transparent 20px
+    ),
+    radial-gradient(circle at 80% 20%, rgba(217, 119, 6, 0.035) 0%, transparent 40%),
+    radial-gradient(circle at 20% 80%, rgba(217, 119, 6, 0.035) 0%, transparent 40%);
+}
+
+.certificate-inner-frame {
+  box-shadow:
+    inset 0 0 0 1px #e2e8f0,
+    inset 0 0 0 6px #ffffff,
+    inset 0 0 0 8px #047857,
+    inset 0 0 0 11px #fef3c7,
+    inset 0 0 0 12px #d97706;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  @page {
+    size: landscape A4;
+    margin: 0.8cm;
+  }
+}
