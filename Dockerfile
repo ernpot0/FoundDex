@@ -13,6 +13,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+ENV DOCKER_BUILD=1
 # Public build-time environment variables (passed via Cloud Build / build args)
 ARG NEXT_PUBLIC_APP_URL=https://founddex.com
 ARG NEXT_PUBLIC_SUPABASE_URL
