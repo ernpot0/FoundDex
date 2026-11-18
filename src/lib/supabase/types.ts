@@ -59,6 +59,7 @@ export interface Database {
           avatar_url: string | null;
           trust_points: number;
           is_admin: boolean;
+          is_suspended: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -68,6 +69,7 @@ export interface Database {
           avatar_url?: string | null;
           trust_points?: number;
           is_admin?: boolean;
+          is_suspended?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -77,6 +79,7 @@ export interface Database {
           avatar_url?: string | null;
           trust_points?: number;
           is_admin?: boolean;
+          is_suspended?: boolean;
           created_at?: string;
           updated_at?: string;
         };
