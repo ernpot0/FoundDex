@@ -6,13 +6,13 @@ test.describe("FoundDex E2E Smoke Suite", () => {
   }) => {
     await page.goto("/");
     await expect(
-      page.getByRole("heading", { name: "Find. Verify. Return." })
+      page.getByRole("heading", { name: /Lost Something\?/i })
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Report Lost Item" })
+      page.getByRole("link", { name: "Report Lost Item" }).first()
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Report Found Item" })
+      page.getByRole("link", { name: "Report Found Item" }).first()
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: /Browse & Search Map/i })

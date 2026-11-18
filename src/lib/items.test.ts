@@ -44,7 +44,7 @@ describe("item report validation", () => {
   });
 
   it("maps category values to human-readable labels", () => {
-    expect(getCategoryLabel("electronics")).toBe("Electronics & Phones");
+    expect(getCategoryLabel("electronics")).toBe("Electronics");
     expect(getCategoryLabel("unknown")).toBe("Other Items");
   });
 });

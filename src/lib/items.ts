@@ -3,13 +3,19 @@ import { getPublicEnv } from "@/lib/env";
 import { ITEM_PHOTOS_BUCKET } from "@/lib/storage";
 
 export const ITEM_CATEGORIES = [
-  { value: "electronics", label: "Electronics & Phones" },
-  { value: "wallet-keys", label: "Wallets, Keys & Cards" },
-  { value: "documents", label: "IDs & Documents" },
+  { value: "electronics", label: "Electronics" },
+  { value: "mobile-phones", label: "Mobile Phones" },
+  { value: "wallet-keys", label: "Wallets & Money" },
+  { value: "documents", label: "Documents & Cards" },
   { value: "bags-luggage", label: "Bags & Luggage" },
-  { value: "jewelry-watches", label: "Jewelry & Watches" },
+  { value: "keys", label: "Keys" },
+  { value: "jewelry-watches", label: "Jewellery" },
+  { value: "clothing", label: "Clothing" },
+  { value: "vehicles", label: "Vehicles" },
   { value: "pets", label: "Pets" },
-  { value: "clothing", label: "Clothing & Accessories" },
+  { value: "sports", label: "Sports Equipment" },
+  { value: "personal", label: "Personal Belongings" },
+  { value: "home-office", label: "Home & Office" },
   { value: "other", label: "Other Items" },
 ] as const;
 
